@@ -103,7 +103,7 @@ function buildCalculation(inputs) {
   const netResult = pretax - tax;
   const monthlyCashMovement = ebitda - inputs.interestCost - tax - inputs.loanRepayment - inputs.ownerDraw - inputs.monthlyInvestment;
   const startupNeed = inputs.startupEquipment + inputs.startupInventory + inputs.startupDeposit;
-  const workingCapitalNeed = (variableCost + operatingCosts + inputs.interestCost + inputs.loanRepayment) * inputs.workingCapitalMonths;
+  const workingCapitalNeed = (variableCost + operatingCosts + inputs.interestCost + inputs.loanRepayment + inputs.ownerDraw) * inputs.workingCapitalMonths;
   const fundingSources = inputs.ownerFunding + inputs.grantFunding + inputs.newLoan;
   const fundingRequired = startupNeed + workingCapitalNeed;
   const fundingGap = Math.max(0, fundingRequired - fundingSources);
