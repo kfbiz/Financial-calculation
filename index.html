@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102a2a">
+  <meta name="description" content="Private financial planning workspace for small businesses in Finland.">
+  <title>Financial Calculation | KF Biz</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Financial Calculation home">
+      <span class="brand-mark">KF</span>
+      <span><strong>Financial Calculation</strong><small>KF Biz · Private workspace</small></span>
+    </a>
+    <div class="topbar-right">
+      <span id="session-status" class="status-pill"><span class="status-dot"></span> Sign in required</span>
+      <button id="sign-out-button" class="button button-quiet hidden" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section id="auth-panel" class="auth-card">
+      <div class="eyebrow">PRIVATE FINANCIAL WORKSPACE</div>
+      <h1>Plan the numbers.<br><span>Understand the business.</span></h1>
+      <p class="lead">A working model for revenue, costs, profitability, cash flow and startup funding. Your saved scenarios are private to your account.</p>
+      <form id="sign-in-form" class="auth-form">
+        <label for="login-email">Email address</label>
+        <input id="login-email" type="email" autocomplete="username" required placeholder="you@example.com">
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" required placeholder="Your password">
+        <button class="button button-primary button-full" type="submit">Sign in to workspace</button>
+        <p id="auth-message" class="form-message" role="status">For private use, account creation is disabled in this interface. Create your account first in Supabase Authentication → Users.</p>
+      </form>
+      <div class="security-note"><span class="icon-shield">✓</span><span>Saved scenarios are protected with database row-level security and are only accessible to their owner.</span></div>
+    </section>
+
+    <div id="workspace" class="workspace hidden">
+      <section class="page-intro">
+        <div>
+          <div class="eyebrow">GENERAL MODEL · VERSION 1</div>
+          <h1>Business financial model</h1>
+          <p>Start with the business as a whole. Specialised industry assumptions can be added without rebuilding the core calculations.</p>
+        </div>
+        <div class="intro-actions">
+          <button id="new-scenario-button" class="button button-secondary" type="button">＋ New scenario</button>
+          <button id="save-scenario-button" class="button button-primary" type="button">Save scenario</button>
+        </div>
+      </section>
+
+      <div class="scenario-toolbar card">
+        <div class="scenario-select-wrap">
+          <label for="saved-scenarios">Saved scenarios</label>
+          <select id="saved-scenarios"><option value="">No saved scenarios loaded</option></select>
+        </div>
+        <div class="toolbar-actions">
+          <button id="load-scenario-button" class="button button-secondary" type="button">Load selected</button>
+          <button id="delete-scenario-button" class="button button-danger-soft" type="button" disabled>Delete</button>
+          <button id="export-button" class="button button-quiet" type="button">Export report CSV</button>
+        </div>
+      </div>
+      <p id="workspace-message" class="form-message" role="status"></p>
+
+      <div class="dashboard-grid">
+        <div class="input-column">
+          <section class="card section-card">
+            <div class="section-heading">
+              <span class="section-number">01</span>
+              <div><h2>Business and scenario</h2><p>Set the context and core assumptions for this calculation.</p></div>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label for="scenario-name">Scenario name</label><input id="scenario-name" type="text" maxlength="120" value="Base case" required></div>
+              <div class="field"><label for="business-name">Business name</label><input id="business-name" type="text" maxlength="160" placeholder="Business or idea name"></div>
+              <div class="field"><label for="industry">Target industry</label>
+                <select id="industry">
+                  <option value="general">General / not decided yet</option>
+                  <option value="consulting">Consulting and professional services</option>
+                  <option value="cleaning">Cleaning services</option>
+                  <option value="beauty">Beauty, hair and wellness</option>
+                  <option value="restaurant">Restaurant, café and food</option>
+                  <option value="retail">Retail and e-commerce</option>
+                  <option value="construction">Construction and skilled trades</option>
+                  <option value="transport">Transport and logistics</option>
+                  <option value="accommodation">Accommodation and tourism</option>
+                  <option value="other_services">Other services</option>
+                </select>
+              </div>
+              <div class="field"><label for="legal-form">Business form</label>
+                <select id="legal-form">
+                  <option value="toiminimi">Toiminimi (sole trader)</option>
+                  <option value="oy">Osakeyhtiö (Oy)</option>
+                  <option value="partnership">Partnership / other</option>
+                </select>
+              </div>
+            </div>
+            <div class="note note-neutral">Enter revenue and costs <strong>without VAT</strong>. VAT collected from customers is not turnover. The VAT estimate below is only a planning aid, not a VAT return calculation.</div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <span class="section-number">02</span>
+              <div><h2>Revenue and direct costs</h2><p>Use a typical month once the business reaches the sales level you expect.</p></div>
+            </div>
+            <div class="table-scroll">
+              <table class="entry-table">
+                <thead><tr><th>Product / service</th><th>Price per unit<br><small>€/month excl. VAT</small></th><th>Units / month</th><th>Direct cost / unit<br><small>€ excl. VAT</small></th><th>Sales / month</th><th></th></tr></thead>
+                <tbody id="revenue-rows"></tbody>
+              </table>
+            </div>
+            <button id="add-revenue-row" class="button button-add" type="button">＋ Add revenue stream</button>
+            <div class="metric-strip"><span>Monthly turnover</span><strong id="revenue-total">€0</strong></div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <span class="section-number">03</span>
+              <div><h2>Monthly operating costs</h2><p>Enter normal recurring costs excluding recoverable VAT.</p></div>
+            </div>
+            <div class="cost-grid">
+              <div class="field"><label for="cost-premises">Premises / rent (€ / month)</label><input id="cost-premises" data-cost="premises" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cost-utilities">Electricity, water and utilities (€ / month)</label><input id="cost-utilities" data-cost="utilities" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cost-software">Software, IT and phone (€ / month)</label><input id="cost-software" data-cost="software" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cost-accounting">Accounting and administration (€ / month)</label><input id="cost-accounting" data-cost="accounting" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cost-marketing">Marketing and sales (€ / month)</label><input id="cost-marketing" data-cost="marketing" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cost-insurance">Insurance and memberships (€ / month)</label><input id="cost-insurance" data-cost="insurance" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cost-transport">Vehicle and travel (€ / month)</label><input id="cost-transport" data-cost="transport" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cost-other">Other operating costs (€ / month)</label><input id="cost-other" data-cost="other" type="number" min="0" step="0.01" value="0"></div>
+            </div>
+            <div class="form-grid top-gap">
+              <div class="field"><label for="employee-cost">Total employer cost for staff (€ / month)</label><input id="employee-cost" type="number" min="0" step="0.01" value="0"><small>Include gross wages and estimated employer-side costs. Do not include the proprietor's private withdrawals.</small></div>
+              <div class="field"><label for="depreciation">Estimated depreciation (€ / month)</label><input id="depreciation" type="number" min="0" step="0.01" value="0"><small>Planning estimate for long-term assets. Actual depreciation depends on accounting and tax rules.</small></div>
+            </div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <span class="section-number">04</span>
+              <div><h2>Startup funding and cash</h2><p>Separate one-off startup requirements from the cash already available.</p></div>
+            </div>
+            <div class="subheading">One-off startup requirements</div>
+            <div class="form-grid">
+              <div class="field"><label for="startup-equipment">Equipment and setup (€)</label><input id="startup-equipment" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="startup-inventory">Initial inventory and supplies (€)</label><input id="startup-inventory" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="startup-deposit">Deposits, licences and pre-opening (€)</label><input id="startup-deposit" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="working-capital-months">Working capital buffer (months)</label><input id="working-capital-months" type="number" min="0" max="24" step="1" value="3"></div>
+            </div>
+            <div class="subheading top-gap">Available funding and debt</div>
+            <div class="form-grid">
+              <div class="field"><label for="owner-funding">Owner's contribution (€)</label><input id="owner-funding" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="grant-funding">Grants / other confirmed funding (€)</label><input id="grant-funding" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="new-loan">New loan funding (€)</label><input id="new-loan" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="cash-start">Cash available after setup (€)</label><input id="cash-start" type="number" min="0" step="0.01" value="0"><small>Use the balance after one-off setup costs and funding have been paid. Do not enter the same funds twice.</small></div>
+              <div class="field"><label for="loan-repayment">Loan principal repayment (€ / month)</label><input id="loan-repayment" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="interest-cost">Loan and financing interest (€ / month)</label><input id="interest-cost" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="owner-draw">Owner's cash withdrawals target (€ / month)</label><input id="owner-draw" type="number" min="0" step="0.01" value="0"><small>Cash-flow item only. A toiminimi owner's private withdrawals are not a deductible salary expense.</small></div>
+              <div class="field"><label for="monthly-investment">Ongoing equipment / investment (€ / month)</label><input id="monthly-investment" type="number" min="0" step="0.01" value="0"></div>
+            </div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <span class="section-number">05</span>
+              <div><h2>Planning assumptions</h2><p>Change these assumptions to test alternative futures.</p></div>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label for="revenue-growth">Annual revenue growth (%)</label><input id="revenue-growth" type="number" min="-100" max="500" step="0.5" value="5"></div>
+              <div class="field"><label for="cost-inflation">Annual cost increase (%)</label><input id="cost-inflation" type="number" min="-50" max="200" step="0.5" value="3"></div>
+              <div class="field"><label for="tax-reserve">Illustrative tax reserve on positive profit (%)</label><input id="tax-reserve" type="number" min="0" max="100" step="0.5" value="20"><small>Not a tax calculation. Finnish tax treatment differs by legal form and personal circumstances.</small></div>
+              <div class="field"><label for="sales-vat-rate">Assumed average sales VAT rate (%)</label>
+                <select id="sales-vat-rate">
+                  <option value="0">0%</option><option value="10">10%</option><option value="13.5">13.5%</option><option value="25.5" selected>25.5%</option>
+                </select>
+                <small>Finland has multiple VAT rates and exemptions. Choose a rate suitable for your sales or use a weighted average.</small>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="results-column">
+          <section class="results-hero">
+            <div class="eyebrow eyebrow-light">LIVE SUMMARY · MONTHLY RUN RATE</div>
+            <div class="result-large-label">Estimated turnover</div>
+            <div id="hero-revenue" class="result-large">€0</div>
+            <div class="hero-subgrid">
+              <div><span>Gross margin</span><strong id="hero-margin">0%</strong></div>
+              <div><span>Operating result (EBITDA)</span><strong id="hero-ebitda">€0</strong></div>
+            </div>
+          </section>
+          <section class="card result-card">
+            <div class="result-card-heading"><div><h2>Key indicators</h2><p>Based on the assumptions entered.</p></div><span class="live-tag">LIVE</span></div>
+            <div class="kpi-list">
+              <div class="kpi-row"><span>Monthly net result estimate</span><strong id="kpi-net">€0</strong></div>
+              <div class="kpi-row"><span>Break-even turnover / month</span><strong id="kpi-breakeven">—</strong></div>
+              <div class="kpi-row"><span>Cash after one month</span><strong id="kpi-cash">€0</strong></div>
+              <div class="kpi-row"><span>Cash runway estimate</span><strong id="kpi-runway">—</strong></div>
+              <div class="kpi-row"><span>Estimated sales VAT / month</span><strong id="kpi-vat">€0</strong></div>
+            </div>
+            <div id="health-message" class="health-message">Enter expected sales and costs to see the indicators.</div>
+          </section>
+          <section class="card result-card">
+            <div class="result-card-heading"><div><h2>Startup funding need</h2><p>One-off costs plus the selected working capital buffer.</p></div></div>
+            <div class="funding-total"><span>Estimated total requirement</span><strong id="funding-required">€0</strong></div>
+            <div class="funding-line"><span>Less available funding</span><strong id="funding-sources">€0</strong></div>
+            <div class="funding-line funding-gap"><span>Funding gap</span><strong id="funding-gap">€0</strong></div>
+          </section>
+          <section class="card result-card">
+            <div class="result-card-heading"><div><h2>Stress test</h2><p>Simple directional scenarios, not a probability forecast.</p></div></div>
+            <div class="scenario-metrics">
+              <div><span class="scenario-tag down">Downside</span><strong id="stress-down">€0</strong><small>Revenue −20%; costs +10%</small></div>
+              <div><span class="scenario-tag up">Upside</span><strong id="stress-up">€0</strong><small>Revenue +10%; costs +5%</small></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section class="card forecast-card">
+        <div class="section-heading">
+          <span class="section-number">06</span>
+          <div><h2>Three-year forecast</h2><p>Annualised from the monthly run rate; revenue growth and cost increases are editable assumptions.</p></div>
+        </div>
+        <div class="table-scroll">
+          <table class="forecast-table">
+            <thead><tr><th>Metric (€ / year unless stated)</th><th id="year-1-heading">Year 1</th><th id="year-2-heading">Year 2</th><th id="year-3-heading">Year 3</th></tr></thead>
+            <tbody>
+              <tr><th>Turnover, excluding VAT</th><td id="forecast-revenue-0">€0</td><td id="forecast-revenue-1">€0</td><td id="forecast-revenue-2">€0</td></tr>
+              <tr><th>Direct / variable costs</th><td id="forecast-variable-0">€0</td><td id="forecast-variable-1">€0</td><td id="forecast-variable-2">€0</td></tr>
+              <tr><th>Gross profit</th><td id="forecast-gross-0">€0</td><td id="forecast-gross-1">€0</td><td id="forecast-gross-2">€0</td></tr>
+              <tr><th>Operating expenses and staff</th><td id="forecast-fixed-0">€0</td><td id="forecast-fixed-1">€0</td><td id="forecast-fixed-2">€0</td></tr>
+              <tr class="subtotal"><th>EBITDA</th><td id="forecast-ebitda-0">€0</td><td id="forecast-ebitda-1">€0</td><td id="forecast-ebitda-2">€0</td></tr>
+              <tr><th>Estimated depreciation</th><td id="forecast-depr-0">€0</td><td id="forecast-depr-1">€0</td><td id="forecast-depr-2">€0</td></tr>
+              <tr><th>Interest and finance costs</th><td id="forecast-interest-0">€0</td><td id="forecast-interest-1">€0</td><td id="forecast-interest-2">€0</td></tr>
+              <tr><th>Illustrative tax reserve</th><td id="forecast-tax-0">€0</td><td id="forecast-tax-1">€0</td><td id="forecast-tax-2">€0</td></tr>
+              <tr class="total-row"><th>Estimated net result</th><td id="forecast-net-0">€0</td><td id="forecast-net-1">€0</td><td id="forecast-net-2">€0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote">Model boundary: this is a planning aid, not statutory accounting, a tax return, a loan offer or financial advice. It does not yet calculate VAT purchases/repayments, payment-term timing, balance-sheet items, or legal-form-specific taxation. Check industry-specific VAT and employment obligations before relying on an estimate.</p>
+      </section>
+
+      <footer class="workspace-footer">
+        <span>Financial Calculation · Model v1.0</span>
+        <span>Inputs are yours to update. Review assumptions before making decisions.</span>
+      </footer>
+    </div>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
