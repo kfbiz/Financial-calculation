@@ -238,6 +238,9 @@ The methodology is cross-checked against three independent reference types:
 
 The price comparison is a plausibility check using published customer prices, not a claim about average prices, realised transaction prices, market share or the profitability of a new operator. The billable hours and cost inputs below are hypothetical assumptions for testing the calculator.
 
+4. **Finnish Tax Administration VAT guidance** — identifies cleaning services as subject to the 25.5% general VAT rate. The selected cleaning scenario therefore uses 25.5% output VAT.
+   - https://vero.fi/en/businesses-and-corporations/taxes-and-charges/vat/rates-of-vat/
+
 ### Test scenario assumptions
 
 | Input | Assumption |
@@ -266,6 +269,20 @@ The price comparison is a plausibility check using published customer prices, no
 | Owner funding / new loan | €1,500 / €1,000 |
 
 The €300 YEL amount is only a test input. Actual YEL depends on the entrepreneur's confirmed YEL work income and applicable rules. The 100 monthly billable hours and other cost assumptions are also hypothetical; they are not published industry averages.
+
+### Cross-check against the supplied Excel references
+
+The five supplied workbooks were also reviewed as design references:
+
+| Supplied workbook | Useful reference | What the current web model still lacks |
+| --- | --- | --- |
+| Budget template | General budget categories and planning layout | Detailed month-by-month budget schedule |
+| Calculations_all | Separate costs, selling, financing, cash budget and salary planning | Detailed payroll calculation and linked monthly cash budget |
+| Nordea Budget Template | Monthly budget, yearly budget and balance-budget structure | Full balance-sheet forecast and monthly-to-annual roll-up |
+| Prediction template | Three-year operating result, cash flow, loan repayment capacity, working-capital changes and investment movements | Detailed loan repayment-capacity statement and three-year cash-flow bridge |
+| Profitability Template (Adnan) | Entrepreneur income target, YEL, fixed costs and target invoicing | Gross-up from a desired personal after-tax income to a required sales target |
+
+Version 2 has moved closer to the profitability reference by introducing a distinct YEL input and a cash break-even result that includes the owner's cash target. It does not yet convert a desired personal net income into a gross business profit requirement because the entrepreneur's final Finnish tax position cannot be represented by one generic tax percentage.
 
 ### Independently calculated monthly result
 
