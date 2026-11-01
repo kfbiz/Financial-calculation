@@ -102,4 +102,4 @@ const zeroGrowth = buildCalculation({ ...base, revenueGrowth: -1 });
 close(zeroGrowth.forecasts[1].revenue, 0, '100% revenue decline in year 2');
 close(zeroGrowth.forecasts[1].variable, 0, 'variable costs reduce to zero when sales volume becomes zero');
 
-console.log('PASS: 31 financial-model validation assertions');
+console.log('PASS: financial-model validation assertions');
