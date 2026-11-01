@@ -1,13 +1,13 @@
 # KF Biz — Financial Calculation
 
-A private financial-planning workspace for KF Biz. The project is designed to help estimate the financial requirements and performance of small businesses in Finland, compare business scenarios, and prepare structured forecasts for business planning and financing discussions.
+A private financial-planning workspace for KF Biz. The project helps estimate the financial requirements and performance of small businesses in Finland, compare business scenarios and prepare structured forecasts for business planning and financing discussions.
 
-The project starts with a **general-purpose financial model**. Industry-specific templates will be added as extensions to the same calculation system, rather than creating separate applications for every industry.
+The project uses a **general-purpose financial model** with optional industry-specific assumptions planned as extensions to the same calculation engine.
 
-- **Current model version:** 1
+- **Current calculation model:** Version 2
 - **Currency:** EUR
 - **Primary market:** Finland
-- **Application type:** Browser-based web application
+- **Application:** Static browser-based web application
 - **Data storage:** Supabase Postgres
 - **Repository:** [kfbiz/Financial-calculation](https://github.com/kfbiz/Financial-calculation)
 
@@ -15,40 +15,42 @@ The project starts with a **general-purpose financial model**. Industry-specific
 
 ## 1. Current project status
 
-Version 1 provides the first general financial calculation workflow.
+Version 2 is the current general financial calculation baseline.
 
-| Component | Current status |
+| Component | Status |
 | --- | --- |
-| General revenue and direct-cost model | Implemented |
-| Operating cost categories and staff-cost input | Implemented |
+| Multiple monthly revenue streams and direct costs | Implemented |
+| Operating costs, including a separate YEL input | Implemented |
 | Gross profit, gross margin and EBITDA | Implemented |
-| Estimated net result and illustrative tax reserve | Implemented |
-| Break-even turnover | Implemented |
-| Startup funding and working-capital estimate | Implemented |
-| Monthly cash movement and cash runway indicator | Implemented |
-| Three-year forecast | Implemented |
-| Basic downside and upside sensitivity test | Implemented |
-| Supabase scenario saving and retrieval | Implemented in application code; complete live browser test still required |
+| Estimated result before tax and illustrative tax reserve | Implemented |
+| P&L break-even turnover | Implemented |
+| Cash break-even including owner cash target and debt repayments | Implemented |
+| Startup funding and conservative working-capital buffer | Implemented |
+| Monthly cash movement and simple cash-runway indicator | Implemented |
+| Three-year profit forecast | Implemented |
+| Downside and upside sensitivity cases | Implemented |
+| Supabase sign-in and scenario persistence code | Implemented; live end-to-end browser test still required |
 | CSV export | Implemented |
+| Independent calculation tests | Added under `tests/` |
 | Industry-specific calculation modules | Planned |
-| Detailed VAT and monthly cash-timing model | Planned |
+| Detailed monthly cash-flow and VAT settlement model | Planned |
 
-The calculations update in the browser as inputs change. Scenarios can be saved to Supabase, retrieved, edited, deleted and exported as CSV after signing in.
-
-A separate Excel workbook template was also prepared as an offline planning reference. That workbook is currently separate from this GitHub repository; it is not one of the deployed application files.
+The application calculates results in the browser as assumptions change. After signing in, a user can save, load, update and delete their own scenarios. The current model is a planning aid, not an accounting or tax product.
 
 ---
 
-## 2. Main application files
+## 2. Repository files
 
 | File | Responsibility |
 | --- | --- |
-| `index.html` | Page structure, input sections, result panels and forecast table |
-| `styles.css` | Responsive layout and visual styling for desktop and mobile |
-| `app.js` | Input handling, financial formulas, live calculations, authentication, database operations and CSV export |
-| `README.md` | Project documentation and setup guide |
+| `index.html` | Page structure, data-entry sections, result panels and forecast table |
+| `styles.css` | Responsive desktop and mobile styling |
+| `app.js` | Browser inputs, rendering, Supabase authentication, scenario persistence and CSV export |
+| `model.mjs` | Pure financial calculation engine, separated from the browser interface so it can be tested |
+| `tests/financial-model-validation.mjs` | Repeatable calculation tests using Node's built-in assertion library |
+| `README.md` | Project setup, formulas, validation record and roadmap |
 
-The application loads the pinned Supabase JavaScript client, `@supabase/supabase-js@2.117.3`, from jsDelivr. No local build process or package installation is required for the current static version.
+The browser application loads the pinned Supabase JavaScript client, `@supabase/supabase-js@2.117.3`, from jsDelivr. The calculator does not require a local build step.
 
 ---
 
@@ -56,26 +58,25 @@ The application loads the pinned Supabase JavaScript client, `@supabase/supabase
 
 ### Business and scenario information
 
-- Scenario name
-- Business name
+- Scenario name and business name
 - Industry category
 - Legal form: toiminimi, Oy or other
 - EUR as the reporting currency
 
 ### Revenue and direct costs
 
-The calculator supports multiple revenue streams. Each line has:
+Each revenue line contains:
 
 - Product or service name
 - Selling price per unit, excluding VAT
-- Estimated quantity sold per month
+- Monthly sales quantity
 - Direct cost per unit, excluding VAT
 
-The calculator derives monthly turnover, direct costs, gross profit and gross margin from these entries.
+Monthly turnover, direct costs, gross profit and gross margin are derived from these inputs.
 
 ### Operating costs
 
-The general operating-cost inputs include:
+The monthly operating-cost inputs include:
 
 - Premises and rent
 - Electricity, water and utilities
@@ -83,72 +84,63 @@ The general operating-cost inputs include:
 - Accounting and administration
 - Marketing and sales
 - Insurance and memberships
+- **YEL entrepreneur pension insurance**
 - Vehicle and travel
 - Other operating costs
 - Total employer cost for staff
 - Estimated depreciation
 
-Staff cost is entered as one combined monthly estimate in this first version. Detailed wage, employer-contribution and employee-level calculations are not yet included.
+YEL is an explicit user input; the application does not calculate the applicable YEL contribution from the entrepreneur's confirmed YEL work income. Staff cost remains a combined employer-cost estimate in this version.
 
 ### Startup funding and cash planning
 
-The model includes one-off startup expenditure:
+One-off startup costs:
 
 - Equipment and setup
 - Initial inventory and supplies
 - Deposits, licences and pre-opening expenses
-- Working-capital buffer in months
 
-Funding sources include:
+Funding sources:
 
 - Owner's contribution
 - Grants or other confirmed funding
 - Planned loan funding
 
-Additional cash-flow inputs include:
+Monthly cash-flow inputs:
 
 - Cash available after setup
-- Monthly loan principal repayment
-- Monthly interest and financing costs
-- Owner's cash-withdrawal target
-- Ongoing monthly investments
+- Loan principal repayment
+- Interest and financing cost
+- Owner's monthly personal cash target / withdrawals
+- Ongoing equipment and investment spending
 
-**Important distinction:** accounting profitability and cash movement are not the same. For a toiminimi, the owner's private withdrawals are treated as a cash-flow item, not as a deductible salary expense in the profit calculation.
+**Profitability and cash flow are deliberately separated.** An owner's private withdrawal is not an operating expense or deductible salary in a toiminimi profit calculation. The withdrawal target is included in the cash-flow and cash break-even calculations. Oy owner remuneration requires separate treatment.
 
 ### Planning assumptions
 
 - Annual revenue growth
 - Annual cost increase
-- Illustrative tax-reserve percentage
-- Average sales VAT rate
-
-These assumptions are editable and should be changed to match the business being assessed.
+- Illustrative tax reserve on positive estimated profit
+- Assumed average sales VAT rate
+- Working-capital buffer in months
 
 ---
 
 ## 4. Calculation methodology
 
-All sales prices, turnover and operating costs are entered **excluding VAT**. The current VAT amount is a planning estimate based on one selected average sales VAT rate.
+All turnover, prices and costs are entered excluding VAT. The VAT figure is only an estimate of output VAT on sales using one selected average rate. It is not net VAT payable because purchase VAT, exemptions, different rates by sales line and settlement timing are not yet modelled.
 
-The main formulas are:
+### Profitability calculations
 
-**Revenue**
-
-`Monthly turnover = Sum of (unit selling price × monthly quantity)`
-
-**Direct costs**
+`Monthly turnover = Sum of (unit price × monthly quantity)`
 
 `Monthly direct costs = Sum of (direct cost per unit × monthly quantity)`
 
-**Gross profit and margin**
-
 `Gross profit = Turnover − Direct costs`
 
-`Gross margin = Gross profit ÷ Turnover`
+`Gross margin ratio = Gross profit ÷ Turnover`
 
-**Operating result**
-
-`EBITDA = Turnover − Direct costs − operating costs − staff costs`
+`EBITDA = Gross profit − operating costs − staff costs`
 
 `Result before tax estimate = EBITDA − depreciation − financing interest`
 
@@ -156,60 +148,211 @@ The main formulas are:
 
 `Estimated net result = result before tax − illustrative tax reserve`
 
-The tax reserve is only a user-selected planning assumption. It is not a Finnish tax calculation.
+The tax reserve is a user-selected planning assumption. It is not a Finnish tax calculation. The default 20% must not be treated as the actual tax rate for a toiminimi or as an automatic tax result for an Oy.
 
-**Break-even turnover**
+### P&L break-even
 
-`Break-even turnover = (operating costs + depreciation + financing interest) ÷ gross-margin ratio`
+`P&L break-even turnover = (operating costs + depreciation + interest) ÷ gross-margin ratio`
 
-A meaningful break-even estimate requires a positive gross margin. The figure is not calculated when the gross-margin ratio is zero or negative.
+This shows the estimated turnover needed to cover operating expenses, depreciation and interest. It does not include the owner's private cash withdrawal target or loan principal repayment.
 
-**Monthly cash movement**
+A meaningful break-even estimate requires a positive gross margin. If the gross margin is zero or negative, the figure is reported as not calculable.
 
-`Monthly cash movement = EBITDA − interest − tax reserve − loan principal repayment − owner withdrawals − ongoing investment`
+### Cash break-even
 
-`Cash after one month = starting cash + monthly cash movement`
+Cash break-even solves for turnover that covers:
 
-The runway indicator estimates how many months the starting cash could cover the current monthly cash deficit. It is a simplified indicator, not a detailed monthly cash budget.
+- Operating costs
+- Financing interest
+- Loan principal repayments
+- Owner's monthly personal cash target
+- Ongoing investment spending
+- The illustrative tax reserve, when the estimated result before tax is positive
 
-**Startup funding requirement**
+The calculation uses the current gross-margin ratio and the selected tax-reserve assumption. If the reserve is set to 100% and taxable profit is required to cover cash outflows, no finite cash break-even is reported.
 
-`Working-capital estimate = (direct costs + operating costs + interest + loan repayment + owner withdrawal target) × selected buffer months`
+This is still a simplified monthly model. It assumes sales convert to cash in the same month and does not model receivable or payable timing.
 
-`Total funding requirement = one-off startup costs + working-capital estimate`
+### Monthly cash movement
+
+`Monthly cash movement = EBITDA − interest − illustrative tax reserve − loan principal repayment − owner withdrawals − ongoing investment`
+
+`Cash after one month = opening cash after setup + monthly cash movement`
+
+Depreciation is excluded from cash movement because it is a non-cash accounting expense. The runway indicator is a simple ratio of starting cash to the current monthly cash deficit; it is not a month-by-month cash budget.
+
+### Startup funding requirement
+
+The working-capital reserve uses a conservative gross-outflow method:
+
+`Monthly buffer base = direct costs + operating costs + interest + loan principal + owner cash target + ongoing investment + illustrative tax reserve`
+
+`Working-capital reserve = monthly buffer base × selected buffer months`
+
+`Total funding requirement = one-off startup costs + working-capital reserve`
 
 `Funding gap = max(0, total funding requirement − entered funding sources)`
 
-This is an initial planning estimate. It does not yet account for exact payment dates, VAT settlement dates or a detailed opening balance sheet.
+The reserve is deliberately **not offset by forecast sales receipts**. It approximates a chosen period of costs that could need to be funded before sales receipts are available. This can produce a high estimate for a business expected to generate revenue from its first month. It should be adjusted after preparing a realistic sales ramp-up and monthly cash-flow schedule. Avoid entering the same owner funds or loan funds again as opening cash.
 
-**Three-year forecast**
+### Three-year forecast
 
-The forecast annualises the current monthly run rate and applies the selected assumptions:
+- Year 1 annualises the current monthly run rate.
+- Revenue grows according to the annual revenue-growth assumption.
+- Direct costs scale with the revenue-volume factor **and** the cost-inflation factor.
+- Operating costs and staff costs increase with the cost-inflation assumption.
+- Depreciation and interest are held constant because the model does not yet contain an asset or loan amortisation schedule.
+- The illustrative tax reserve is applied only to positive estimated pre-tax results.
 
-- Revenue changes according to the annual revenue-growth assumption.
-- Direct and operating costs change according to the annual cost-increase assumption.
-- Depreciation is increased using the cost-increase assumption.
-- Interest is held constant in the current simplified forecast.
-- The illustrative tax reserve is applied to positive estimated pre-tax results.
+This prevents the earlier issue in which sales could grow while direct costs did not grow with the volume of sales.
 
-This is a scenario based on the assumptions entered, not a prediction of actual future performance.
-
-**Stress test**
+### Stress test
 
 The current directional sensitivity cases are:
 
-- Downside: revenue decreases by 20% and direct and operating costs increase by 10%.
-- Upside: revenue increases by 10% and direct and operating costs increase by 5%.
+- Downside: revenue volume decreases by 20% and cost assumptions increase by 10%.
+- Upside: revenue volume increases by 10% and cost assumptions increase by 5%.
 
-These are simple examples for testing sensitivity. They are not statistical probabilities or industry benchmarks.
+These are simple scenario tests, not statistical probabilities or industry averages.
 
 ---
 
-## 5. Supabase database and data protection
+## 5. Benchmark selection and validation record
 
-The application uses the Supabase project:
+### Why this benchmark was selected
 
-[Financial-calculation project dashboard](https://supabase.com/dashboard/project/crevbddanoyhgrrbutzl)
+The first validation scenario is an illustrative one-person cleaning service operating as a toiminimi in the Turku region. It was selected because the revenue unit (billable cleaning hour), VAT treatment, consumable costs and recurring operating costs can be stated clearly.
+
+The methodology is cross-checked against three independent reference types:
+
+1. **Suomi.fi startup financial-planning guidance** — recommends preparing both a cash-flow statement and a profitability calculation; it says the working-capital reserve should commonly cover 2–3 months of expenses and profitability planning should start with the entrepreneur's income target.
+   - https://www.suomi.fi/company/financing-a-business-and-business-subsidies/financial-planning/guide/financing-a-startup-business/financial-and-profitability-calculations
+   - https://www.suomi.fi/company/financing-a-business-and-business-subsidies/financial-planning/guide/financing-a-startup-business/financing-to-a-company-during-the-start-up-phase
+
+2. **Yritystulkki startup calculation models YT4 and YT5** — their published descriptions cover profitability, turnover, taxable income, cash budgets, EBITDA, financing result and industry comparison. This is a strong structural benchmark for the kinds of outputs a Finnish startup calculation tool should cover.
+   - https://www.yritystulkki.fi/fi/alue/cursor/aloittava-yrittaja/suunnittelu/taloussuunnitelmat/
+
+3. **Published Turku-area cleaning-service prices** — PipalClean publishes recurring-customer pricing of €48/hour and a basic price of €50/hour, including 25.5% VAT. Lempi Kodinhoito publishes a Turku/Pirkanmaa recurring price of €53/hour and one-off price of €60/hour, including 25.5% VAT. The scenario's €40/hour excluding VAT equals €50.20/hour including 25.5% VAT, which sits within the published recurring-price examples.
+   - https://www.pipal.fi/hinnasto/kotisiivous-hinta/
+   - https://www.lempi.fi/hinnasto
+
+The price comparison is a plausibility check using published customer prices, not a claim about average prices, realised transaction prices, market share or the profitability of a new operator. The billable hours and cost inputs below are hypothetical assumptions for testing the calculator.
+
+### Test scenario assumptions
+
+| Input | Assumption |
+| --- | ---: |
+| Business type | One-person cleaning service, toiminimi |
+| Billable cleaning hours | 100 hours / month |
+| Selling price | €40.00 / hour, excluding VAT |
+| Direct supplies cost | €2.00 / billed hour |
+| Software, phone | €45 / month |
+| Accounting | €75 / month |
+| Marketing | €90 / month |
+| Other insurance and memberships | €75 / month |
+| YEL premium placeholder | €300 / month |
+| Vehicle and travel | €260 / month |
+| Other operating costs | €85 / month |
+| Depreciation | €45 / month |
+| Financing interest | €40 / month |
+| Owner cash withdrawal target | €1,800 / month |
+| Loan principal repayment | €100 / month |
+| Ongoing investment | €50 / month |
+| Illustrative tax reserve | 20% |
+| Sales VAT rate | 25.5% |
+| Annual sales growth / cost inflation | 5% / 3% |
+| Startup purchases and deposits | €2,200 |
+| Working-capital buffer | 3 months |
+| Owner funding / new loan | €1,500 / €1,000 |
+
+The €300 YEL amount is only a test input. Actual YEL depends on the entrepreneur's confirmed YEL work income and applicable rules. The 100 monthly billable hours and other cost assumptions are also hypothetical; they are not published industry averages.
+
+### Independently calculated monthly result
+
+| Output | Validated result |
+| --- | ---: |
+| Turnover, excluding VAT | €4,000 |
+| Direct costs | €200 |
+| Gross profit | €3,800 |
+| Gross margin | 95.0% |
+| Operating costs including YEL | €930 |
+| EBITDA | €2,870 |
+| Depreciation | €45 |
+| Interest | €40 |
+| Estimated result before tax | €2,785 |
+| Illustrative tax reserve | €557 |
+| Estimated net result | €2,228 |
+| Monthly cash movement after owner target, loan principal and ongoing investment | **+€323** |
+| Cash after one month, starting from €700 | €1,023 |
+| P&L break-even turnover | €1,068 / month |
+| Cash break-even turnover, including owner cash target and illustrative tax | €3,575 / month |
+| Estimated sales VAT at 25.5% | €1,020 / month |
+
+The P&L break-even and cash break-even are intentionally different. The business can cover accounting-style costs at a much lower sales level, but it needs substantially more turnover to also fund the owner's €1,800 cash target, debt principal and ongoing investment.
+
+The €1,020 VAT figure is estimated output VAT only. It is not the amount payable to the Tax Administration because deductible purchase VAT and payment timing are excluded.
+
+### Startup funding buffer result
+
+| Output | Validated result |
+| --- | ---: |
+| Gross monthly outflow included in reserve | €3,677 |
+| Three-month working-capital reserve | €11,031 |
+| One-off startup costs | €2,200 |
+| Total indicative funding requirement | €13,231 |
+| Owner funding plus planned loan | €2,500 |
+| Indicative funding gap | €10,731 |
+
+This gap is a conservative no-revenue buffer, not a forecast of the actual cash shortfall after sales. A monthly ramp-up and payment-timing model is needed to estimate a more precise amount.
+
+### Three-year forecast result
+
+| Metric | Year 1 | Year 2 | Year 3 |
+| --- | ---: | ---: | ---: |
+| Turnover | €48,000 | €50,400 | €52,920 |
+| Direct costs | €2,400 | €2,596 | €2,807 |
+| Gross profit | €45,600 | €47,804 | €50,113 |
+| Operating costs and staff | €11,160 | €11,495 | €11,840 |
+| EBITDA | €34,440 | €36,310 | €38,273 |
+| Depreciation | €540 | €540 | €540 |
+| Interest | €480 | €480 | €480 |
+| Illustrative tax reserve | €6,684 | €7,058 | €7,451 |
+| Estimated net result | €26,736 | €28,232 | €29,803 |
+
+Figures are rounded to whole euros in this table. The forecast is a steady-state scenario with assumed annual growth and cost inflation, not a first-year start-up ramp-up forecast.
+
+### Validation tests performed
+
+The independent validation suite is stored in `tests/financial-model-validation.mjs`. It uses Node's built-in assertion library and has no third-party test dependency.
+
+The suite checks:
+
+- Monthly turnover, direct cost and gross-profit calculations
+- Gross margin, operating costs including YEL, EBITDA and estimated net result
+- Monthly cash movement and opening cash reconciliation
+- P&L break-even and cash break-even
+- Whether cash movement is zero at the calculated cash break-even
+- Working-capital and funding-gap calculations
+- Output VAT arithmetic
+- Direct-cost growth with both sales-volume growth and input-cost inflation
+- Depreciation staying level without a depreciation schedule
+- Zero sales, zero gross margin and negative gross margin
+- Tax-reserve edge cases
+- A 100% sales-volume decline in the forecast
+
+The calculation engine and application JavaScript were syntax-checked, and the validation vectors were executed against the current calculation function. A live browser sign-in and Supabase save/load cycle still needs to be checked in the deployed browser environment.
+
+Run the repeatable suite locally with:
+
+```bash
+node tests/financial-model-validation.mjs
+```
+
+---
+
+## 6. Supabase database and data protection
+
+Project: [Financial-calculation in Supabase](https://supabase.com/dashboard/project/crevbddanoyhgrrbutzl)
 
 The initial table is `public.financial_scenarios`.
 
@@ -223,112 +366,109 @@ The initial table is `public.financial_scenarios`.
 | `legal_form` | Selected legal form |
 | `currency` | EUR |
 | `model_version` | Calculation model version |
-| `inputs` | JSON object containing the assumptions |
+| `inputs` | JSON object containing assumptions |
 | `results` | JSON object containing calculated results |
 | `created_at`, `updated_at` | Record timestamps |
 
 ### Access-control model
 
 - Row Level Security (RLS) is enabled on `financial_scenarios`.
-- Authenticated users can only read, insert, update or delete rows where `user_id = auth.uid()`.
-- Anonymous access to this table is revoked.
-- The frontend uses the Supabase publishable key. A service-role key or secret key must never be placed in browser code or committed to GitHub.
-- The application currently provides sign-in but not public self-registration.
+- The authenticated policies require `auth.uid() = user_id` for reading, inserting, updating and deleting records.
+- Anonymous access to the scenario table is revoked.
+- The browser uses the Supabase publishable key only. Never place a service-role or secret key in browser code or in GitHub.
+- The application has sign-in but no public self-registration.
 
-The repository is public, so the application source and publishable key can be viewed by anyone. The publishable key is intended for frontend use; actual data access must remain protected by database grants and RLS policies. Do not treat a hidden page or an unlisted URL as data security.
+The repository is public, so the application source and publishable key can be viewed by anyone. The key is designed for browser use; the database grants and RLS policies must continue to protect the data.
 
 ### Create the private operator account
 
 1. Open the Supabase project.
 2. Navigate to **Authentication → Users**.
-3. Add the intended user with an email address and password.
+3. Add the intended user's email and password.
 4. Confirm the account if Supabase requests it.
 5. Open the deployed application and sign in.
 
-Only create additional accounts when you intentionally want those account holders to use the calculator. RLS keeps each account's saved scenarios separated.
+Only create additional users when you intend to let those account holders use the calculator. RLS separates each account's saved scenarios.
 
 ---
 
-## 6. Publish with GitHub Pages
-
-The application is a static website and can be hosted using GitHub Pages.
+## 7. Publish with GitHub Pages
 
 1. Open this repository on GitHub.
 2. Go to **Settings → Pages**.
 3. Under **Build and deployment**, choose **Deploy from a branch**.
 4. Select branch `main` and folder `/(root)`.
-5. Save the settings and wait for the deployment to complete.
-6. Open:
+5. Save and wait for the deployment to complete.
+6. The expected application URL is:
 
    `https://kfbiz.github.io/Financial-calculation/`
 
-7. In Supabase, open **Authentication → URL Configuration**. Set the Site URL to the deployed address and add it to the Redirect URLs allow-list if required by the project's settings.
+7. In Supabase, open **Authentication → URL Configuration**. Set the Site URL to the deployed address and add it to the Redirect URLs allow-list if required by the project settings.
 
-When application files are changed on the `main` branch, GitHub Pages publishes the updated static files after its deployment completes.
+GitHub Pages publishes the static files from the selected branch after each deployment. If the application cannot sign in, check the Pages URL, Supabase Auth URL configuration, publishable key, Data API grants and RLS policies.
 
 ---
 
-## 7. Current limitations and items requiring careful review
+## 8. Current limitations
 
-Version 1 is a financial planning aid. It is not statutory bookkeeping, an official cash budget, a tax-return calculator, a loan offer or regulated financial advice.
+Version 2 is a planning aid. It is not statutory bookkeeping, a full cash budget, an official tax calculator, a loan offer or regulated financial advice.
 
-The following areas are not yet modelled in sufficient detail:
+Not yet modelled:
 
 ### VAT
 
-- Input VAT recovery and the net VAT payable or refundable
-- VAT payment and reporting periods
-- Different VAT rates for individual products and services
+- Input VAT recovery and net VAT payable/refundable
+- Different VAT rates by individual product or service line
 - VAT-exempt sales and mixed taxable/exempt activity
-- VAT treatment of purchases, imports and cross-border transactions
+- VAT reporting periods and payment timing
 
-### Cash flow and working capital
+### Cash flow and financing
 
+- Monthly sales ramp-up and seasonality
 - Customer payment terms and delayed receivables
-- Supplier payment terms and payment schedules
-- Monthly cash-flow forecasts and seasonality
-- Opening balances and a full balance sheet
-- Separate timing of loan drawdowns and repayments
-- VAT settlement timing
+- Supplier payment terms and payable schedules
+- Opening balance sheet and complete balance-sheet forecast
+- Loan amortisation schedule and changing interest charges
+- Monthly cash-flow forecast and repayment-capacity ratio
+- Detailed changes in working capital
 
-### Finnish tax and legal-form differences
+### Finnish taxation and employment
 
-- Toiminimi taxation and the interaction with the entrepreneur's personal taxation
-- Oy corporate tax and salary/dividend scenarios
-- Tax-deductible depreciation rules
-- YEL calculations and eligibility thresholds
-- Detailed payroll, TyEL and employer contributions
-- Industry-specific licences, insurance and regulatory obligations
+- Toiminimi personal income taxation and earned/capital income split
+- Oy corporate tax and owner salary/dividend scenarios
+- Tax-specific depreciation
+- YEL calculation from confirmed YEL work income
+- Detailed payroll, TyEL, employer contributions and holiday-pay accrual
+- Industry licences, insurance and regulatory requirements
 
-### Industry-specific operating assumptions
+### Industry-specific operations
 
-- Capacity and billable utilisation
+- Billable capacity and employee utilisation
 - Materials, ingredients and consumables
-- Product waste and stock turnover
-- Employee shifts and labour productivity
-- Commissions and payment-service fees
+- Waste and inventory turnover
+- Shifts and labour productivity
+- Commissions and card-payment fees
 - Occupancy, bookings and seasonal demand
-- Project-based work and subcontractors
+- Project-based work and subcontracting
 
-Verify applicable Finnish regulations and assumptions before relying on the outputs for tax, funding or contractual decisions.
+Verify Finnish regulations and assumptions before relying on outputs for tax, financing or contractual decisions.
 
 ---
 
-## 8. Planned development roadmap
+## 9. Development roadmap
 
-The development should preserve one common financial engine and extend it with optional industry modules.
+The project should keep one common financial engine and extend it with optional industry presets.
 
-### Stage 1 — Validate the general model
+### Stage 1 — General model validation
 
-- Test several realistic small-business examples.
-- Compare results against independently prepared calculations.
-- Check formula behaviour when revenue is zero, gross margin is negative, costs are high or cash is insufficient.
-- Test saving, loading, updating, deleting and exporting scenarios in a live browser session.
-- Correct any formula or usability issues found during testing.
+- Keep the validation cases and add further scenarios from actual KF Biz work.
+- Compare selected outputs with independently prepared calculations.
+- Complete live browser sign-in and Supabase scenario save/load/update/delete tests.
+- Validate the monthly cash-flow and funding logic against a start-up ramp-up example.
 
-### Stage 2 — Build industry presets
+### Stage 2 — Industry modules
 
-The initial industries to investigate are:
+Initial industry priorities for investigation:
 
 1. Cleaning and property-maintenance services
 2. Beauty, hair and wellness
@@ -338,40 +478,50 @@ The initial industries to investigate are:
 
 Retail and e-commerce should also be considered as an early extension.
 
-These are development priorities based on KF Biz's intended small-business and startup-planning audience. They are not confirmed rankings of actual customer demand. The order should be reviewed as real enquiries and paying-customer data become available.
+These are development hypotheses based on the intended KF Biz audience, not confirmed rankings of actual customer demand. Review the priorities using real enquiry and paying-customer data.
 
-### Stage 3 — Add more detailed Finnish financial logic
+### Stage 3 — More detailed Finnish financial calculations
 
 - Multiple VAT rates by revenue line and purchase category
-- More realistic VAT timing
+- VAT payment and refund timing
 - Detailed monthly cash-flow planning
 - Payment terms and working-capital timing
-- More detailed payroll and employer-cost assumptions
-- Separate calculations for toiminimi and Oy where appropriate
+- Loan amortisation and repayment capacity
+- Detailed payroll and YEL assumptions
+- Separate toiminimi and Oy planning models where appropriate
 
-### Stage 4 — Improve reporting and scenario comparison
+### Stage 4 — Reporting and scenario comparison
 
-- Compare multiple scenarios side by side.
-- Add monthly and annual forecast views.
-- Produce clearer reports for business-plan and financing discussions.
-- Add validation messages for incomplete or unrealistic assumptions.
-- Keep historical scenarios identifiable by calculation model version.
+- Side-by-side scenario comparison
+- Monthly and annual forecast views
+- Clearer reports for business plans and financing discussions
+- Input validation and warnings for unrealistic assumptions
+- Historical scenarios associated with their calculation model version
 
 ---
 
-## 9. Version history
+## 10. Version history
+
+### Version 2 — Validation improvements
+
+- Extracted the calculation engine into `model.mjs` so it can be tested independently of the browser UI.
+- Added a dedicated YEL cost input.
+- Added a cash break-even result that includes owner cash target, loan principal, investment outflow and the illustrative tax reserve.
+- Updated the working-capital reserve to include the illustrative tax reserve and ongoing investment.
+- Updated the forecast so direct costs scale with sales volume and cost inflation.
+- Kept depreciation constant until a proper asset schedule is added.
+- Added repeatable tests for the benchmark and edge cases.
+- Documented a Turku cleaning-service benchmark and its limitations.
 
 ### Version 1 — General financial calculation baseline
 
-- Created the initial browser-based financial calculator.
-- Added revenue streams, direct costs and general operating costs.
-- Added profitability, break-even, startup funding and cash-flow estimates.
-- Added three-year forecast and basic sensitivity scenarios.
-- Added Supabase authentication and private scenario persistence.
-- Added CSV report export.
-- Added responsive desktop and mobile styling.
-- Established the initial roadmap for industry-specific extensions.
+- Created the first browser-based financial calculator.
+- Added multiple revenue lines, direct costs and general operating costs.
+- Added profitability, break-even, startup funding and cash movement estimates.
+- Added three-year forecast and simple sensitivity cases.
+- Added Supabase sign-in and private scenario persistence code.
+- Added CSV export and responsive styling.
 
-**Current model version:** `1`
+**Current model version:** `2`
 
-**Next milestone:** validate the general calculation formulas and complete end-to-end browser testing before relying on saved scenarios for real business-planning work.
+**Next milestone:** complete end-to-end browser testing and build a monthly cash-flow forecast before using the calculator as a funding-capacity model.
