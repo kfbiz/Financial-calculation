@@ -4,8 +4,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = 'https://crevbddanoyhgrrbutzl.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_YXRWS3otVosqlt1gYCaK5w_3sUq8nFV';
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-const MODEL_VERSION = 1;
-const COST_KEYS = ['premises', 'utilities', 'software', 'accounting', 'marketing', 'insurance', 'transport', 'other'];
+const MODEL_VERSION = 2;
+const COST_KEYS = ['premises', 'utilities', 'software', 'accounting', 'marketing', 'insurance', 'yel', 'transport', 'other'];
 let activeScenarioId = null;
 let currentUser = null;
 let lastCalculation = null;
@@ -103,13 +103,23 @@ function buildCalculation(inputs) {
   const netResult = pretax - tax;
   const monthlyCashMovement = ebitda - inputs.interestCost - tax - inputs.loanRepayment - inputs.ownerDraw - inputs.monthlyInvestment;
   const startupNeed = inputs.startupEquipment + inputs.startupInventory + inputs.startupDeposit;
-  const workingCapitalNeed = (variableCost + operatingCosts + inputs.interestCost + inputs.loanRepayment + inputs.ownerDraw) * inputs.workingCapitalMonths;
+  const workingCapitalNeed = (variableCost + operatingCosts + inputs.interestCost + inputs.loanRepayment + inputs.ownerDraw + inputs.monthlyInvestment + tax) * inputs.workingCapitalMonths;
   const fundingSources = inputs.ownerFunding + inputs.grantFunding + inputs.newLoan;
   const fundingRequired = startupNeed + workingCapitalNeed;
   const fundingGap = Math.max(0, fundingRequired - fundingSources);
   const breakEvenOperating = grossMarginRatio > 0 ? (operatingCosts + inputs.depreciation + inputs.interestCost) / grossMarginRatio : null;
-  const cashFixedOutflow = operatingCosts + inputs.interestCost + inputs.loanRepayment + inputs.ownerDraw;
-  const breakEvenCash = grossMarginRatio > 0 ? cashFixedOutflow / grossMarginRatio : null;
+  const cashFixedOutflow = operatingCosts + inputs.interestCost + inputs.loanRepayment + inputs.ownerDraw + inputs.monthlyInvestment;
+  let breakEvenCash = null;
+  if (grossMarginRatio > 0) {
+    const cashBreakEvenBeforeTax = cashFixedOutflow / grossMarginRatio;
+    const pretaxAtCashBreakEvenBeforeTax = (grossMarginRatio * cashBreakEvenBeforeTax) - operatingCosts - inputs.depreciation - inputs.interestCost;
+    if (pretaxAtCashBreakEvenBeforeTax <= 0) {
+      breakEvenCash = cashBreakEvenBeforeTax;
+    } else if (inputs.taxReserve < 1) {
+      breakEvenCash = (cashFixedOutflow - inputs.taxReserve * (operatingCosts + inputs.depreciation + inputs.interestCost)) /
+        (grossMarginRatio * (1 - inputs.taxReserve));
+    }
+  }
   const monthlyVat = revenue * inputs.salesVatRate;
   const endingCash = inputs.cashStart + monthlyCashMovement;
   const runway = monthlyCashMovement < 0 ? inputs.cashStart / Math.abs(monthlyCashMovement) : (inputs.cashStart > 0 ? Infinity : null);
@@ -117,10 +127,10 @@ function buildCalculation(inputs) {
     const revenueFactor = Math.pow(1 + inputs.revenueGrowth, yearIndex);
     const costFactor = Math.pow(1 + inputs.costInflation, yearIndex);
     const yRevenue = revenue * revenueFactor * 12;
-    const yVariable = variableCost * costFactor * 12;
+    const yVariable = variableCost * revenueFactor * costFactor * 12;
     const yOperating = operatingCosts * costFactor * 12;
     const yEbitda = yRevenue - yVariable - yOperating;
-    const yDepr = inputs.depreciation * 12 * costFactor;
+    const yDepr = inputs.depreciation * 12;
     const yInterest = inputs.interestCost * 12;
     const yPretax = yEbitda - yDepr - yInterest;
     const yTax = Math.max(0, yPretax * inputs.taxReserve);
@@ -148,6 +158,7 @@ function calculate() {
   setText('hero-ebitda', euro(result.ebitda));
   setText('kpi-net', euro(result.netResult));
   setText('kpi-breakeven', result.breakEvenOperating === null ? 'Not calculable' : euro(result.breakEvenOperating));
+  setText('kpi-cash-breakeven', result.breakEvenCash === null ? 'Not calculable' : euro(result.breakEvenCash));
   setText('kpi-cash', euro(result.endingCash));
   setText('kpi-runway', result.monthlyCashMovement >= 0 ? 'No current burn' : (Number.isFinite(result.runway) ? result.runway.toLocaleString('en-FI', {maximumFractionDigits:1}) + ' months' : '—'));
   setText('kpi-vat', euro(result.monthlyVat));
@@ -328,7 +339,8 @@ function exportCsv() {
     ['Estimated net result', result.netResult],
     ['Estimated monthly cash movement', result.monthlyCashMovement],
     ['Cash after one month', result.endingCash],
-    ['Break-even turnover per month', result.breakEvenOperating === null ? '' : result.breakEvenOperating],
+    ['P&L break-even turnover per month', result.breakEvenOperating === null ? '' : result.breakEvenOperating],
+    ['Cash break-even turnover per month', result.breakEvenCash === null ? '' : result.breakEvenCash],
     ['Estimated sales VAT per month', result.monthlyVat],
     ['Startup requirement', result.fundingRequired],
     ['Confirmed / planned funding entered', result.fundingSources],
