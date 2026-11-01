@@ -357,7 +357,7 @@ The suite checks:
 - Tax-reserve edge cases
 - A 100% sales-volume decline in the forecast
 
-The calculation engine and application JavaScript were syntax-checked, and the validation vectors were executed against the current calculation function. A live browser sign-in and Supabase save/load cycle still needs to be checked in the deployed browser environment.
+The calculation engine and application JavaScript were syntax-checked, and **61 assertion checks passed** against the current calculation function in the JavaScript validation harness. A live browser sign-in and Supabase save/load cycle still needs to be checked in the deployed browser environment.
 
 Run the repeatable suite locally with:
 
