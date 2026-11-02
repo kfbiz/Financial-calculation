@@ -381,39 +381,65 @@ function exportPdf() {
       const headerHeight = options.headerHeight ?? 8;
       const fontSize = options.fontSize ?? 7.6;
       const aligns = options.aligns ?? headers.map((_, i) => i === 0 ? 'left' : 'right');
+
+      // Keep every table inside a safe printable area on A4. Older layouts could
+      // exceed the page width (especially the four-column forecast), clipping
+      // white header labels and values at the right-hand page edge.
+      const requestedWidth = widths.reduce((sum, width) => sum + width, 0);
+      const maxTableWidth = contentWidth - 8; // 4 mm safe inset on both sides
+      if (!Number.isFinite(requestedWidth) || requestedWidth <= 0 || requestedWidth > 1000) {
+        throw new Error('Invalid PDF table column widths.');
+      }
+      const scale = Math.min(1, maxTableWidth / requestedWidth);
+      const columnWidths = widths.map((width) => width * scale);
+      const tableWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+      const tableLeft = margin + (contentWidth - tableWidth) / 2;
+      const tableRight = tableLeft + tableWidth;
       const xStarts = [];
-      let cursor = margin;
-      widths.forEach((width) => { xStarts.push(cursor); cursor += width; });
+      let cursor = tableLeft;
+      columnWidths.forEach((width) => { xStarts.push(cursor); cursor += width; });
+
       ensureSpace(headerHeight + 3);
       doc.setFillColor(25, 91, 82);
-      doc.rect(margin, y, contentWidth, headerHeight, 'F');
-      setBodyFont(7.2, true);
+      doc.rect(tableLeft, y, tableWidth, headerHeight, 'F');
+      setBodyFont(7.1, true);
       doc.setTextColor(255, 255, 255);
       headers.forEach((header, i) => {
-        const lines = doc.splitTextToSize(pdfSafeText(header), widths[i] - 4);
-        doc.text(lines, xStarts[i] + (aligns[i] === 'right' ? widths[i] - 2 : 2), y + 5.2, { align: aligns[i] === 'right' ? 'right' : 'left' });
+        const cellWidth = columnWidths[i];
+        const textWidth = Math.max(8, cellWidth - 6);
+        const lines = doc.splitTextToSize(pdfSafeText(header), textWidth);
+        const x = aligns[i] === 'right' ? xStarts[i] + cellWidth - 3 : xStarts[i] + 3;
+        doc.text(lines, x, y + 5.2, {
+          align: aligns[i] === 'right' ? 'right' : 'left',
+          maxWidth: textWidth
+        });
       });
       y += headerHeight;
       rows.forEach((row, rowIndex) => {
         const cellLines = row.map((cell, i) => {
           setBodyFont(fontSize, i === 0 && options.boldFirstColumn !== false);
-          return doc.splitTextToSize(pdfSafeText(cell), widths[i] - 4);
+          return doc.splitTextToSize(pdfSafeText(cell), Math.max(8, columnWidths[i] - 6));
         });
         const maxLines = Math.max(1, ...cellLines.map((lines) => lines.length));
         const rowHeight = Math.max(7, maxLines * (fontSize * 0.42 + 1.05) + 3);
         ensureSpace(rowHeight + 1);
         if (rowIndex % 2 === 0) {
           doc.setFillColor(247, 250, 248);
-          doc.rect(margin, y, contentWidth, rowHeight, 'F');
+          doc.rect(tableLeft, y, tableWidth, rowHeight, 'F');
         }
         doc.setDrawColor(225, 234, 229);
         doc.setLineWidth(0.15);
-        doc.line(margin, y + rowHeight, margin + contentWidth, y + rowHeight);
+        doc.line(tableLeft, y + rowHeight, tableRight, y + rowHeight);
         row.forEach((cell, i) => {
           setBodyFont(fontSize, Boolean(options.boldRows?.includes(rowIndex)) || (i === 0 && options.boldFirstColumn !== false));
           doc.setTextColor(i === 0 ? 47 : 65, i === 0 ? 68 : 83, i === 0 ? 63 : 76);
-          const x = aligns[i] === 'right' ? xStarts[i] + widths[i] - 2 : xStarts[i] + 2;
-          doc.text(cellLines[i], x, y + 4.7, { align: aligns[i] === 'right' ? 'right' : 'left' });
+          const cellWidth = columnWidths[i];
+          const textWidth = Math.max(8, cellWidth - 6);
+          const x = aligns[i] === 'right' ? xStarts[i] + cellWidth - 3 : xStarts[i] + 3;
+          doc.text(cellLines[i], x, y + 4.7, {
+            align: aligns[i] === 'right' ? 'right' : 'left',
+            maxWidth: textWidth
+          });
         });
         y += rowHeight;
       });
