@@ -53,7 +53,7 @@ To create a report, sign in, load or enter a scenario, then select **Download PD
 | `tests/financial-model-validation.mjs` | Repeatable calculation tests using Node's built-in assertion library |
 | `README.md` | Project setup, formulas, validation record and roadmap |
 
-The browser application loads pinned JavaScript clients from jsDelivr: Supabase JS `@supabase/supabase-js@2.117.3` and PDF generation library `jspdf@4.2.1`. PDF files are generated in the browser; the report does not need to be uploaded to Supabase. The calculator does not require a local build step.
+The browser application loads pinned JavaScript clients from jsDelivr: Supabase JS `@supabase/supabase-js@2.117.3` and PDF generation library [`jspdf@4.2.1`](https://www.npmjs.com/package/jspdf). PDF files are generated in the browser; the report does not need to be uploaded to Supabase. The calculator does not require a local build step.
 
 ---
 
