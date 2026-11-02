@@ -1,5 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm';
 import { buildCalculation } from './model.mjs';
+import { fitPdfTableColumns } from './pdf-layout.mjs';
 import { jsPDF } from 'https://cdn.jsdelivr.net/npm/jspdf@4.2.1/+esm';
 
 // A publishable key is designed for browser use. Never put a Supabase service-role/secret key here.
@@ -385,15 +386,10 @@ function exportPdf() {
       // Keep every table inside a safe printable area on A4. Older layouts could
       // exceed the page width (especially the four-column forecast), clipping
       // white header labels and values at the right-hand page edge.
-      const requestedWidth = widths.reduce((sum, width) => sum + width, 0);
-      const maxTableWidth = contentWidth - 8; // 4 mm safe inset on both sides
-      if (!Number.isFinite(requestedWidth) || requestedWidth <= 0 || requestedWidth > 1000) {
-        throw new Error('Invalid PDF table column widths.');
-      }
-      const scale = Math.min(1, maxTableWidth / requestedWidth);
-      const columnWidths = widths.map((width) => width * scale);
-      const tableWidth = columnWidths.reduce((sum, width) => sum + width, 0);
-      const tableLeft = margin + (contentWidth - tableWidth) / 2;
+      const tableLayout = fitPdfTableColumns(widths, contentWidth, 8);
+      const columnWidths = tableLayout.columnWidths;
+      const tableWidth = tableLayout.tableWidth;
+      const tableLeft = margin + tableLayout.leftInset;
       const tableRight = tableLeft + tableWidth;
       const xStarts = [];
       let cursor = tableLeft;
