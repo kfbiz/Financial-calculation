@@ -31,6 +31,7 @@ Version 2 is the current general financial calculation baseline.
 | Downside and upside sensitivity cases | Implemented |
 | Supabase sign-in and scenario persistence code | Implemented; live end-to-end browser test still required |
 | CSV export | Implemented |
+| Multi-section PDF report download | Implemented with client-side jsPDF 4.2.1 |
 | Independent calculation tests | Added under `tests/` |
 | Industry-specific calculation modules | Planned |
 | Detailed monthly cash-flow and VAT settlement model | Planned |
@@ -45,12 +46,12 @@ The application calculates results in the browser as assumptions change. After s
 | --- | --- |
 | `index.html` | Page structure, data-entry sections, result panels and forecast table |
 | `styles.css` | Responsive desktop and mobile styling |
-| `app.js` | Browser inputs, rendering, Supabase authentication, scenario persistence and CSV export |
+| `app.js` | Browser inputs, rendering, Supabase authentication, scenario persistence, CSV export and PDF report generation |
 | `model.mjs` | Pure financial calculation engine, separated from the browser interface so it can be tested |
 | `tests/financial-model-validation.mjs` | Repeatable calculation tests using Node's built-in assertion library |
 | `README.md` | Project setup, formulas, validation record and roadmap |
 
-The browser application loads the pinned Supabase JavaScript client, `@supabase/supabase-js@2.117.3`, from jsDelivr. The calculator does not require a local build step.
+The browser application loads pinned JavaScript clients from jsDelivr: Supabase JS `@supabase/supabase-js@2.117.3` and PDF generation library `jspdf@4.2.1`. PDF files are generated in the browser; the report does not need to be uploaded to Supabase. The calculator does not require a local build step.
 
 ---
 
@@ -518,6 +519,13 @@ These are development hypotheses based on the intended KF Biz audience, not conf
 ---
 
 ## 10. Version history
+
+### Version 2.x — PDF reporting enhancement
+
+- Added a downloadable PDF report alongside CSV export.
+- Included scenario identification, current monthly results, revenue-stream detail, monthly operating-cost breakdown, cash flow, startup costs and funding, three-year forecast, assumptions and important model limitations.
+- Added page headers, footers and automatic pagination for longer reports.
+- PDF generation runs client-side using pinned jsPDF 4.2.1; no report data is sent to a separate PDF service.
 
 ### Version 2 — Validation improvements
 
