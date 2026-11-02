@@ -38,6 +38,8 @@ Version 2 is the current general financial calculation baseline.
 
 The application calculates results in the browser as assumptions change. After signing in, a user can save, load, update and delete their own scenarios. The current model is a planning aid, not an accounting or tax product.
 
+To create a report, sign in, load or enter a scenario, then select **Download PDF report**. The generated PDF is downloaded directly by the browser and includes the scenario details, revenue streams, monthly profit-and-loss estimate, cash-flow estimate, startup funding analysis, three-year forecast, planning assumptions and model limitations. The existing **Export report CSV** option remains available.
+
 ---
 
 ## 2. Repository files
