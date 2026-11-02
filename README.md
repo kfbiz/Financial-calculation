@@ -522,6 +522,15 @@ These are development hypotheses based on the intended KF Biz audience, not conf
 
 ## 10. Version history
 
+### PDF export layout correction
+
+- Fixed table sizing so every PDF table is scaled to the available A4 print width with a 4 mm safety inset on both sides.
+- The earlier forecast table could exceed the printable width, clipping the rightmost white-on-green header and the last column of figures.
+- Added a reusable layout helper in `pdf-layout.mjs` and regression tests in `tests/pdf-layout-validation.mjs` covering both the historical oversized layouts and the current table widths.
+- Kept the dark green table header and white text, but constrained header and cell text to their column widths.
+
+After deployment, reload the application with a hard refresh (`Ctrl+F5` on Windows) before generating another PDF, so the browser does not reuse the older cached JavaScript.
+
 ### Version 2.x — PDF reporting enhancement
 
 - Added a downloadable PDF report alongside CSV export.
