@@ -270,7 +270,10 @@ function pdfSafeText(value) {
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201c\u201d]/g, '"')
     .replace(/\u2022/g, '-')
-    .replace(/\u00a0/g, ' ');
+    .replace(/\u00a0/g, ' ')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '?');
 }
 function pdfMoney(value) {
   if (value === null || value === undefined || !Number.isFinite(Number(value))) return 'Not calculable';
@@ -494,7 +497,7 @@ function exportPdf() {
         pdfMoney(line.directCost),
         pdfMoney(line.price * line.quantity)
       ]) : [['No revenue lines entered', '-', '-', '-', '-']],
-      [55, 29, 27, 34, 40],
+      [52, 28, 26, 33, 41],
       { fontSize: 7.1, aligns: ['left','right','right','right','right'] }
     );
 
@@ -534,7 +537,7 @@ function exportPdf() {
       ['Starting cash after setup', pdfMoney(inputs.cashStart)],
       ['Cash after one month', pdfMoney(result.endingCash)],
       ['Cash runway estimate', result.monthlyCashMovement < 0 && Number.isFinite(result.runway) ? result.runway.toLocaleString('en-FI', { maximumFractionDigits: 1 }) + ' months' : (result.monthlyCashMovement >= 0 ? 'No current monthly cash burn' : 'Not calculable')]
-    ], [116,69], { fontSize: 7.6, aligns: ['left','right'], boldRows: [6,8] });
+    ], [112,68], { fontSize: 7.6, aligns: ['left','right'], boldRows: [6,8] });
 
     drawSection('Startup costs and funding', 'The working-capital reserve is a conservative gross-outflow buffer; it is not offset by expected sales receipts.');
     drawTable(['Startup cost / funding source', 'Amount'], [
@@ -549,7 +552,7 @@ function exportPdf() {
       ['Planned loan funding', pdfMoney(inputs.newLoan)],
       ['Total funding sources', pdfMoney(result.fundingSources)],
       ['Indicative funding gap', pdfMoney(result.fundingGap)]
-    ], [116,69], { fontSize: 7.6, aligns: ['left','right'], boldRows: [3,5,9,10] });
+    ], [112,68], { fontSize: 7.6, aligns: ['left','right'], boldRows: [3,5,9,10] });
 
     drawSection('Three-year forecast', 'Annualised from the monthly run rate. Revenue growth and cost inflation are applied according to the selected assumptions.');
     drawTable(['Metric', 'Year 1', 'Year 2', 'Year 3'], [
@@ -562,7 +565,7 @@ function exportPdf() {
       ['Interest and finance costs', ...result.forecasts.map((item) => pdfMoney(-item.interest))],
       ['Illustrative tax reserve', ...result.forecasts.map((item) => pdfMoney(-item.tax))],
       ['Estimated net result', ...result.forecasts.map((item) => pdfMoney(item.net))]
-    ], [67, 42.5, 42.5, 43], { fontSize: 6.9, aligns: ['left','right','right','right'], boldRows: [2,4,8] });
+    ], [60, 40, 40, 40], { fontSize: 6.9, aligns: ['left','right','right','right'], boldRows: [2,4,8] });
 
     drawSection('Planning assumptions');
     drawTable(['Assumption', 'Selected value'], [
@@ -575,7 +578,7 @@ function exportPdf() {
       ['Legal form', pdfLegalFormName(inputs.legalForm)],
       ['Industry', pdfIndustryName(inputs.industry)],
       ['Model version', '2']
-    ], [116,69], { fontSize: 7.6, aligns: ['left','right'] });
+    ], [112,68], { fontSize: 7.6, aligns: ['left','right'] });
 
     drawSection('Interpretation and important limitations');
     [
